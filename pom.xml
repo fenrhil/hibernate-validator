@@ -208,6 +208,7 @@
         <version.checkstyle.plugin>3.0.0</version.checkstyle.plugin>
         <version.clean.plugin>3.0.0</version.clean.plugin>
         <version.compiler.plugin>3.7.0</version.compiler.plugin>
+        <version.processor.plugin>3.2.0</version.processor.plugin>
         <version.copy.plugin>0.0.6</version.copy.plugin>
         <version.dependency.plugin>3.0.2</version.dependency.plugin>
         <version.depends.plugin>1.4.0</version.depends.plugin>
@@ -344,11 +345,6 @@
                 <groupId>org.jboss.logging</groupId>
                 <artifactId>jboss-logging</artifactId>
                 <version>${version.org.jboss.logging.jboss-logging}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>jboss-logging-processor</artifactId>
-                <version>${version.org.jboss.logging.jboss-logging-tools}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.logging</groupId>
@@ -593,11 +589,39 @@
                         <target>${maven.compiler.argument.target}</target>
                         <testSource>${maven.compiler.argument.testSource}</testSource>
                         <testTarget>${maven.compiler.argument.testTarget}</testTarget>
-                        <compilerArgs>
-                            <compilerArg>-Aorg.jboss.logging.tools.addGeneratedAnnotation=false</compilerArg>
-                        </compilerArgs>
                         <testCompilerArgument>-parameters</testCompilerArgument>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.bsc.maven</groupId>
+                    <artifactId>maven-processor-plugin</artifactId>
+                    <version>${version.processor.plugin}</version>
+                    <executions>
+                        <!-- Run annotation processors on src/main/java sources -->
+                        <execution>
+                            <id>process</id>
+                            <goals>
+                                <goal>process</goal>
+                            </goals>
+                            <phase>generate-sources</phase>
+                            <configuration>
+                                <processors>
+                                    <processor>org.jboss.logging.processor.apt.LoggingToolsProcessor</processor>
+                                </processors>
+                                <!-- Disable usage of the @Generated annotation: too much trouble as requirements are different across JDK8 vs JDK9 -->
+                                <!-- See also: https://github.com/jboss-logging/jboss-logging-tools/pull/60#issuecomment-293088198 -->
+                                <compilerArguments>-source ${maven.compiler.argument.source} -target ${maven.compiler.argument.target} -Aorg.jboss.logging.tools.addGeneratedAnnotation=false</compilerArguments>
+                            </configuration>
+                        </execution>
+                    </executions>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.jboss.logging</groupId>
+                            <artifactId>jboss-logging-processor</artifactId>
+                            <version>${version.org.jboss.logging.jboss-logging-tools}</version>
+                            <scope>compile</scope>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <artifactId>maven-checkstyle-plugin</artifactId>
