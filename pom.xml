@@ -243,6 +243,12 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://repository.jboss.org/nexus/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
+
+        <!-- Eclipse repository (for the ECJ compiler, disabled by default) -->
+
+        <eclipse.repo.id>eclipse-staging</eclipse.repo.id>
+        <eclipse.repo.url>https://repo.eclipse.org/content/repositories/eclipse-staging/</eclipse.repo.url>
+
         <!-- Build settings -->
 
         <hibernate-validator-parent.path>.</hibernate-validator-parent.path>
@@ -265,6 +271,15 @@
         <maven.compiler.argument.source>${maven.compiler.source}</maven.compiler.argument.source>
         <maven.compiler.argument.testTarget>${maven.compiler.testTarget}</maven.compiler.argument.testTarget>
         <maven.compiler.argument.testSource>${maven.compiler.testSource}</maven.compiler.argument.testSource>
+
+        <!--
+                Options to compile with the Eclipse compiler when building with maven (not with the IDE).
+                See profile "compiler-eclipse".
+                Note the version of ECJ is overridden because the one bundled with the latest plexus-compiler version
+                is outdated and leads to compilation errors.
+         -->
+        <version.org.codehaus.plexus.plexus-compiler-eclipse>2.8.5</version.org.codehaus.plexus.plexus-compiler-eclipse>
+        <version.org.eclipse.jdt.ecj>3.19.0.v20190826-1051</version.org.eclipse.jdt.ecj>
 
         <forbiddenapis.jdk.target>10</forbiddenapis.jdk.target>
 
@@ -1294,6 +1309,56 @@
                     </plugins>
                 </pluginManagement>
             </build>
+        </profile>
+
+        <profile>
+            <id>compiler-eclipse</id>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <artifactId>maven-compiler-plugin</artifactId>
+                            <configuration>
+                                <compilerId>eclipse</compilerId>
+                            </configuration>
+                            <dependencies>
+                                <dependency>
+                                    <groupId>org.codehaus.plexus</groupId>
+                                    <artifactId>plexus-compiler-eclipse</artifactId>
+                                    <version>${version.org.codehaus.plexus.plexus-compiler-eclipse}</version>
+                                </dependency>
+                                <dependency>
+                                    <groupId>org.eclipse.jdt</groupId>
+                                    <artifactId>ecj</artifactId>
+                                    <version>${version.org.eclipse.jdt.ecj}</version>
+                                </dependency>
+                            </dependencies>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+            <pluginRepositories>
+                <!--
+                     This is needed to access pre-release versions of ECJ,
+                     where bugs that affect us are fixed.
+                     See in particular https://bugs.eclipse.org/bugs/show_bug.cgi?id=547807,
+                     not fixed in 3.18.0, the latest ECJ release at the moment.
+                     This configuration *MUST STAY IN A SPECIFIC PROFILE*,
+                     otherwise it would "taint" projects that depend on Hibernate Validator
+                     by adding this repository to their configuration.
+                 -->
+                <pluginRepository>
+                    <id>${eclipse.repo.id}</id>
+                    <url>${eclipse.repo.url}</url>
+                    <releases>
+                        <enabled>true</enabled>
+                        <updatePolicy>never</updatePolicy>
+                    </releases>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                </pluginRepository>
+            </pluginRepositories>
         </profile>
         <profile>
             <id>jqassistant</id>
